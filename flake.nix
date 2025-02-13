@@ -13,19 +13,21 @@
       nixpkgs,
       flake-utils,
     }:
-    let
-      mkPackage =
-        system:
+    flake-utils.lib.eachDefaultSystem (system: {
+      packages = {
+        racket-minimal =
+          (import nixpkgs {
+            inherit system;
+            overlays = [ (import ./overlays) ];
+          }).racket-minimal;
+        default = self.packages.${system}.racket-minimal;
+      };
+
+      # For devenv access
+      racket-minimal =
         (import nixpkgs {
           inherit system;
           overlays = [ (import ./overlays) ];
         }).racket-minimal;
-    in
-    flake-utils.lib.eachDefaultSystem (system: {
-      packages.default = mkPackage system;
-      packages.racket-minimal = mkPackage system;
-      # For devbox direct reference
-      default = mkPackage system;
-      racket-minimal = mkPackage system;
     });
 }
