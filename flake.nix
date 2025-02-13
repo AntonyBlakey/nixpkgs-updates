@@ -1,5 +1,6 @@
+# flake.nix
 {
-  description = "Custom nixpkgs overlay collection";
+  description = "Custom package collection";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -7,31 +8,27 @@
   };
 
   outputs =
-    { nixpkgs, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        isDarwin = builtins.match ".*-darwin" system != null;
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    let
+      mkPackage =
+        system:
+        (import nixpkgs {
+          inherit system;
+          overlays = [ (import ./overlays) ];
+        }).racket-minimal;
+    in
+    {
+      # Standard flake outputs
+      packages = flake-utils.lib.eachDefaultSystem (system: {
+        racket-minimal = mkPackage system;
+        default = self.packages.${system}.racket-minimal;
+      });
 
-        # Import all overlay files
-        racketOverlay = import ./overlays/racket.nix;
-
-        # Combine overlays conditionally
-        overlays = (if isDarwin then [ racketOverlay ] else [ ]);
-
-        # Create modified nixpkgs
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
-      in
-      {
-        # Export the full modified nixpkgs
-        legacyPackages = pkgs;
-
-        # Also export specific packages for convenience
-        # packages = {
-        #   inherit (pkgs) racket-minimal;
-        # };
-      }
-    );
+      # Direct package access
+      racket-minimal = mkPackage (builtins.head flake-utils.lib.defaultSystems);
+    };
 }
