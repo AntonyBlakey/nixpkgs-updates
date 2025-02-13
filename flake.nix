@@ -28,7 +28,12 @@
         default = self.packages.${system}.racket-minimal;
       });
 
-      # Direct package access
+      # Direct package access for devenv
       racket-minimal = mkPackage (builtins.head flake-utils.lib.defaultSystems);
-    };
+    }
+    //
+      # Direct package access for devbox
+      flake-utils.lib.eachDefaultSystem (system: {
+        racket-minimal = mkPackage system;
+      });
 }
