@@ -7,27 +7,20 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs =
+  outputs = { self, nixpkgs, flake-utils }:
+    let
+      overlay = import ./overlays;
+    in
     {
-      self,
-      nixpkgs,
-      flake-utils,
-    }:
-    flake-utils.lib.eachDefaultSystem (system: {
+      overlays.default = overlay;
+    } // flake-utils.lib.eachDefaultSystem (system: {
       packages = {
         racket-minimal =
           (import nixpkgs {
             inherit system;
-            overlays = [ (import ./overlays) ];
+            overlays = [ overlay ];
           }).racket-minimal;
         default = self.packages.${system}.racket-minimal;
       };
-
-      # For devenv access
-      racket-minimal =
-        (import nixpkgs {
-          inherit system;
-          overlays = [ (import ./overlays) ];
-        }).racket-minimal;
     });
 }
